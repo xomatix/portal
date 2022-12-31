@@ -1,0 +1,4 @@
+Host ubuntu@141.144.254.97
+    User ubuntu
+    IdentityFile C:/Users/Ryzen/.ssh/privk.ppk
+    
