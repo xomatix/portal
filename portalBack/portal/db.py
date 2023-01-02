@@ -33,6 +33,7 @@ class Category(base):
     id = Column(Integer, primary_key=True)
     name = Column(String(32))
     description = Column(String(256))
+    posts = relationship('Post', backref='categories')
 
 class Post(base):
     __tablename__ = "posts"
@@ -40,6 +41,7 @@ class Post(base):
     id = Column(Integer, primary_key=True)
     title = Column(String(128))
     description = Column(String(4096))
+    category_id = Column(Integer, ForeignKey('categories.id'))
     images = relationship('Image', backref='posts')
 
 class Image(base):
