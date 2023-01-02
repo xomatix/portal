@@ -22,7 +22,8 @@ def get_user(id, session=get_db()):
 
 @bp.route('/resource', methods=['GET'])
 @jwt_required()
-def get_resource(session=get_db()):
+def get_resource(db_session=get_db()):
     user_id = get_jwt_identity()
-    user = session.query(User).filter_by(id = user_id).first()
+    user = db_session.query(User).filter_by(id = user_id).first()
+    db_session.close()
     return jsonify({ 'data': f'Hello, {user.username}!' })

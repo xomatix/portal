@@ -1,6 +1,7 @@
-from sqlalchemy import create_engine, Column, String, Integer
+from sqlalchemy import create_engine, Column, String, Integer, ForeignKey
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
-from flask import Blueprint, current_app
+from flask import Blueprint
 from sqlalchemy.orm import sessionmaker
 from passlib.apps import custom_app_context as pwd_context
 from itsdangerous import (url_safe  as Serializer, BadSignature, SignatureExpired)
@@ -26,32 +27,46 @@ class User(base):
     def verify_password(self, password):
         return pwd_context.verify(password, self.password_hash)
 
-    def generate_auth_token(self):
-        s = Serializer.URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
-        return s.dumps({ 'id': self.id })
+class Category(base):
+    __tablename__ = "categories"
 
-    @staticmethod
-    def verify_auth_token(token):
-        s = Serializer.URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
-        try:
-            data = s.loads(token)
-        except SignatureExpired:
-            return None 
-        except BadSignature:
-            return None
-        session = get_db()
-        user = session.query(User).filter_by(id=data['id']).first()
-        return user
+    id = Column(Integer, primary_key=True)
+    name = Column(String(32))
+    description = Column(String(256))
+
+class Post(base):
+    __tablename__ = "posts"
+
+    id = Column(Integer, primary_key=True)
+    title = Column(String(128))
+    description = Column(String(4096))
+    images = relationship('Image', backref='posts')
+
+class Image(base):
+    __tablename__ = "images"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(128))
+    url = Column(String(128))
+    post_id = Column(Integer, ForeignKey('posts.id'))
+
 
 def init_db():
     base.metadata.create_all(engine)
-
-#init_db()
 
 def get_db():
     Session = sessionmaker(bind=engine)
     session = Session()
     return session
+
+def delete_db():
+    Post.__table__.drop(engine)
+    session = get_db()
+    session.delete(Post)
+    session.commit()
+
+#init_db()
+#delete_db()
 
 #adding random data
 def add_data(session):
