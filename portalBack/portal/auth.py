@@ -34,12 +34,11 @@ def logout():
     return response
 
 
-@bp.after_request
+@bp.after_app_request
 def refresh(response):
     try:
         access_token = create_access_token(identity=get_jwt_identity())
         set_access_cookies(response, access_token)
-        print("refreshed")
         return response
     except (RuntimeError, KeyError):
         return response

@@ -8,7 +8,7 @@ from itsdangerous import (url_safe  as Serializer, BadSignature, SignatureExpire
 import random
 
 # connect with data base
-engine = create_engine('sqlite:///portal.sqlite', echo=True)
+engine = create_engine('sqlite:///portal.sqlite', connect_args={'check_same_thread': False}, echo=True)
 
 base = declarative_base()
 
