@@ -1,9 +1,10 @@
+import os
 from flask import (
     Blueprint, flash, g, jsonify, redirect, render_template, request, session, url_for, abort
 )
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-from portal.db import get_db, User, Category, Post
+from portal.db import get_db, User, Category, Post, Image
 
 bp = Blueprint('portal', __name__, url_prefix='/api')
 
@@ -27,6 +28,43 @@ def get_resource(db_session=get_db()):
     user = db_session.query(User).filter_by(id = user_id).first()
     db_session.close()
     return jsonify({ 'data': f'Hello, {user.username}!' })
+
+#IMAGE FUNCTIONS
+
+@bp.route('/image', methods=['POST'])
+def add_image(db_session=get_db()):
+    name = request.form.get('name','')
+    file = request.files['image']
+    post_id = request.form.get('post_id','')
+    if db_session.query(Image).filter_by(name=name).first() is not None:
+        return jsonify({ 'data': 'Not created already exists!' })
+    upload_folder_path = os.path.join(os.path.dirname(__file__),'images')
+    if not os.path.exists(upload_folder_path):
+        os.makedirs(upload_folder_path)
+        print(f"Created new folder in path {upload_folder_path}")
+    url = os.path.join(upload_folder_path, file.filename)
+    image = Image(name=name, url=file.filename, post_id=post_id)
+    file.save(url)
+    db_session.add(image)
+    db_session.commit()
+    db_session.close()
+    return jsonify({ 'data': f'Created {name} image!' })
+
+@bp.route('/image/<int:id>/delete', methods=['DELETE'])
+def delete_image(id, db_session=get_db()):
+    i = db_session.query(Image).filter_by(id=id).first()
+    if i is None:
+        return jsonify({ 'data': 'Already not exists!' })
+    upload_folder_path = os.path.join(os.path.dirname(__file__),'images')
+    if not os.path.exists(upload_folder_path):
+        os.makedirs(upload_folder_path)
+        print(f"Created new folder in path {upload_folder_path}")
+    url = os.path.join(upload_folder_path, i.url)
+    os.remove(url)
+    db_session.delete(i)
+    db_session.commit()
+    db_session.close()
+    return jsonify({ 'data': f'Deleted {i.name} image!' })
 
 #POST FUNCTIONS
 
