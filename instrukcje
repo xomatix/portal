@@ -5,4 +5,4 @@ zdjęcia :
     /post/<int:id>/image
         zwraca wszystkie zdjęcia z bazy danych (objekty) lub zwraca url do poszczególnych zdjęć sortuj od najmniejszego indeksu
     /image/<int:id>/delete  
-        usuwa zdjecie z tym id
+        usuwa zdjecie z tym id -<>-
