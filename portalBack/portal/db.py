@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, String, Integer, ForeignKey
+from sqlalchemy import create_engine, Column, String, Integer, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from flask import Blueprint
@@ -40,6 +40,10 @@ class Post(base):
 
     id = Column(Integer, primary_key=True)
     title = Column(String(128))
+    area = Column(Integer)
+    price = Column(Integer)
+    rent = Column(Boolean, default=False)
+    specs = Column(String(1024))
     description = Column(String(4096))
     category_id = Column(Integer, ForeignKey('categories.id'))
     images = relationship('Image', backref='posts')
@@ -50,6 +54,7 @@ class Image(base):
     id = Column(Integer, primary_key=True)
     name = Column(String(128))
     url = Column(String(128))
+    order = Column(Integer)
     post_id = Column(Integer, ForeignKey('posts.id'))
 
 
@@ -63,6 +68,7 @@ def get_db():
 
 def delete_db():
     Post.__table__.drop(engine)
+    #Image.__table__.drop(engine)
     session = get_db()
     session.delete(Post)
     session.commit()
@@ -71,6 +77,21 @@ def delete_db():
 #delete_db()
 
 #adding random data
+def add_data_post(session):
+    for i in range(1,50):
+            title = ''.join(chr(random.randint(97,122)) for _ in range(50))
+            area = random.randint(9,1000)
+            price = random.randint(20000,1000000)
+            rent = random.randint(0,1)
+            description =  ''.join(chr(random.randint(97,122)) for _ in range(230))
+            category_id = random.randint(1, 3)
+
+            post = Post(title=title, area=area, price=price, rent=rent, description=description, category_id=category_id)
+            session.add(post)
+
+    session.commit()
+#add_data_post(get_db())
+
 def add_data(session):
     for i in range(10,20):
             name = ''.join(chr(random.randint(97,122)) for _ in range(3))
@@ -80,7 +101,6 @@ def add_data(session):
             session.add(usr)
 
     session.commit()
-#add_data(get_db())
 
 def search_db(session):
     d = session.query(User).filter(User.name.contains('%a%'))

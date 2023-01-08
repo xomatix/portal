@@ -1,6 +1,6 @@
 import os
 from flask import (
-    Blueprint, flash, g, jsonify, redirect, render_template, request, session, url_for, abort
+    Blueprint, g, jsonify, redirect, render_template, request, session, url_for, abort, send_file
 )
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
@@ -49,6 +49,18 @@ def add_image(db_session=get_db()):
     db_session.commit()
     db_session.close()
     return jsonify({ 'data': f'Created {name} image!' })
+
+@bp.route('/image/<int:id>', methods=['GET'])
+def access_image(id, db_session=get_db()):
+    i = db_session.query(Image).filter_by(id=id).first()
+    if i is None:
+        return jsonify({ 'data': 'Not exists!' })
+    upload_folder_path = os.path.join(os.path.dirname(__file__),'images')
+    if not os.path.exists(upload_folder_path):
+        return jsonify({ 'data': 'Not exists!' })
+    url = os.path.join(upload_folder_path, i.url)
+    db_session.close()
+    return send_file(url)
 
 @bp.route('/image/<int:id>/delete', methods=['DELETE'])
 def delete_image(id, db_session=get_db()):
@@ -115,7 +127,7 @@ def get_posts(db_session=get_db()):
     posts = db_session.query(Post).all()
     db_session.close()
     posts = [i.__dict__ for i in posts]
-    posts = [{'id': i['id'], 'title': i['title'], 'description': i['description'], 'category_id': i['category_id']} for i in posts]
+    posts = [{'id': i['id'], 'title': i['title'], 'area': i['area'], 'price': i['price'], 'specs': i['specs'],'rent': i['rent'],'description': i['description'], 'category_id': i['category_id']} for i in posts]
     
     return jsonify({ 'data': posts})
 
