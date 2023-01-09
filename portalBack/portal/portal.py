@@ -3,7 +3,7 @@ from flask import (
     Blueprint, g, jsonify, redirect, render_template, request, session, url_for, abort, send_file
 )
 from flask_jwt_extended import jwt_required, get_jwt_identity
-
+from random import randint
 from portal.db import get_db, User, Category, Post, Image
 
 bp = Blueprint('portal', __name__, url_prefix='/api')
@@ -31,28 +31,49 @@ def get_resource(db_session=get_db()):
 
 #IMAGE FUNCTIONS
 
+@bp.route('/image/<int:post_id>/<int:id>', methods=['PUT'])
+@jwt_required()
+def edit_image(id, post_id, db_session=get_db()):
+    order = request.form.get('order','')
+    image = db_session.query(Image).filter_by(id=id).first()
+    if image is None:
+        return jsonify({ 'data': 'Don\'t exists!' })
+    image.order = order
+    name = image.name
+    db_session.commit()
+    db_session.close()
+    return jsonify({ 'data': f'Updated {name} image!' })
+
 @bp.route('/image', methods=['POST'])
+@jwt_required()
 def add_image(db_session=get_db()):
     name = request.form.get('name','')
     file = request.files['image']
     post_id = request.form.get('post_id','')
+    order = request.form.get('order','')
     if db_session.query(Image).filter_by(name=name).first() is not None:
         return jsonify({ 'data': 'Not created already exists!' })
     upload_folder_path = os.path.join(os.path.dirname(__file__),'images')
     if not os.path.exists(upload_folder_path):
         os.makedirs(upload_folder_path)
         print(f"Created new folder in path {upload_folder_path}")
-    url = os.path.join(upload_folder_path, file.filename)
-    image = Image(name=name, url=file.filename, post_id=post_id)
+    post_folder = os.path.join(upload_folder_path, post_id)
+    if not os.path.exists(post_folder):
+        os.makedirs(post_folder)
+        print(f"Created new folder in path {post_folder}")
+    url_name = ''.join(chr(randint(97,122)) for i in range(5))
+    url_name += "." + file.filename.split('.')[-1]
+    url = os.path.join(post_folder, url_name)
+    image = Image(name=name, url=os.path.join(post_id, url_name), post_id=post_id, order=order)
     file.save(url)
     db_session.add(image)
     db_session.commit()
     db_session.close()
     return jsonify({ 'data': f'Created {name} image!' })
 
-@bp.route('/image/<int:id>', methods=['GET'])
-def access_image(id, db_session=get_db()):
-    i = db_session.query(Image).filter_by(id=id).first()
+@bp.route('/image/<int:post_id>/<int:id>', methods=['GET'])
+def access_image(post_id, id, db_session=get_db()):
+    i = db_session.query(Image).filter_by(id=id, post_id=post_id).first()
     if i is None:
         return jsonify({ 'data': 'Not exists!' })
     upload_folder_path = os.path.join(os.path.dirname(__file__),'images')
@@ -62,7 +83,18 @@ def access_image(id, db_session=get_db()):
     db_session.close()
     return send_file(url)
 
+@bp.route('/image/<int:post_id>', methods=['GET'])
+def access_post_image(post_id, db_session=get_db()):
+    images = db_session.query(Image).filter_by(post_id=post_id).all()
+    if images is None:
+        return jsonify({ 'data': 'Not exists!' })
+    db_session.close()
+    images = [i.__dict__ for i in images]
+    images = [{'id': i['id'], 'name': i['name'], 'order': i['order'],'url': f'{url_for("portal.access_image",  id=i["id"], post_id=i["post_id"])}', 'url_r': i['url'],'post_id': i['post_id']} for i in images]
+    return jsonify({'data': images})
+
 @bp.route('/image/<int:id>/delete', methods=['DELETE'])
+@jwt_required()
 def delete_image(id, db_session=get_db()):
     i = db_session.query(Image).filter_by(id=id).first()
     if i is None:

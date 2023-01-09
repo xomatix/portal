@@ -67,14 +67,14 @@ def get_db():
     return session
 
 def delete_db():
-    Post.__table__.drop(engine)
-    #Image.__table__.drop(engine)
+    #Post.__table__.drop(engine)
+    Image.__table__.drop(engine)
     session = get_db()
     session.delete(Post)
     session.commit()
 
-#init_db()
 #delete_db()
+#init_db()
 
 #adding random data
 def add_data_post(session):
