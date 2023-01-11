@@ -211,4 +211,4 @@ def get_categories(db_session=get_db()):
     categories = [i.__dict__ for i in categories]
     categories = [{'id': i['id'], 'name': i['name'], 'description': i['description']} for i in categories]
     
-    return jsonify({ 'data': categories})
+    return jsonify( categories)

@@ -92,6 +92,8 @@ def add_data_post(session):
     session.commit()
 #add_data_post(get_db())
 
+
+
 def add_data(session):
     for i in range(10,20):
             name = ''.join(chr(random.randint(97,122)) for _ in range(3))
